@@ -6,11 +6,33 @@ def run_spec_test(test_case, options = {})
   end
 
   assert File.exists?(test_case.input_path), "Input #{test_case.input_path} file does not exist"
-  assert File.exists?(test_case.expected_path), "Expected #{test_case.expected_path} file does not exist"
 
   output, clean_output, error, status = test_case.output
 
-  if status != 0 && !options[:unexpected_pass]
+  if options[:nuke]
+    if status != 0
+      File.open(test_case.status_path, "w+") do |f|
+        f.write(status)
+        f.close
+      end
+    end
+
+    if error.length > 0
+      File.open(test_case.error_path, "w+") do |f|
+        f.write(error)
+        f.close
+      end
+    end
+
+    File.open(test_case.expected_path, "w+") do |f|
+      f.write(output)
+      f.close
+    end
+  end
+
+  assert File.exists?(test_case.expected_path), "Expected #{test_case.expected_path} file does not exist"
+
+  if status != 0 && !options[:unexpected_pass] && (options[:nuke] || !test_case.should_fail?)
     msg = "Command `#{options[:engine_adapter]}` did not complete:\n\n#{error}"
 
     if options[:skip]
@@ -26,17 +48,16 @@ def run_spec_test(test_case, options = {})
     raise "#{test_case.input_path} passed a test we expected it to fail"
   end
 
-  if options[:nuke]
-    File.open(test_case.expected_path, "w+") do |f|
-      f.write(output)
-      f.close
-    end
-  end
-
   if test_case.todo? && options[:unexpected_pass]
     assert test_case.expected != clean_output, "Marked as todo and passed"
   elsif !test_case.todo? || !options[:skip_todo]
+    if test_case.should_fail?
+       assert_equal test_case.expected_status, status, "Expected did not match status"
+    end
     assert_equal test_case.expected, clean_output, "Expected did not match output"
+    if test_case.verify_stderr?
+      assert_equal test_case.expected_error, error, "Expected did not match error"
+    end
   end
 end
 
