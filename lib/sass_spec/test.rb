@@ -47,7 +47,8 @@ def run_spec_test(test_case, options = {})
     assert test_case.expected != clean_output, "Marked as todo and passed"
   elsif !test_case.todo? || !options[:skip_todo]
     if test_case.should_fail?
-       assert_equal test_case.expected_status, status, "Expected did not match status"
+       # XXX Ruby returns 65 etc. SassC returns 1
+       assert status > 0, "Expected did not match status"
     end
     assert_equal test_case.expected, clean_output, "Expected did not match output"
     if test_case.verify_stderr?
