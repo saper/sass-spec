@@ -52,7 +52,10 @@ def run_spec_test(test_case, options = {})
     end
     assert_equal test_case.expected, clean_output, "Expected did not match output"
     if test_case.verify_stderr?
-      assert_equal test_case.expected_error, error, "Expected did not match error"
+      # Compare only first line of error output (we can't compare stacktraces etc.)
+      error_msg = error.each_line.next.rstrip
+      expected_error_msg = test_case.expected_error.each_line.next.rstrip
+      assert_equal expected_error_msg, error_msg, "Expected did not match error"
     end
   end
 end
