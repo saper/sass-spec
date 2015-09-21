@@ -8,6 +8,7 @@ class SassSpec::TestCase
     @output_style = style
     @clean_test = clean
     @options = options
+    @todo = (@input_path.to_s.include? "todo") || File.file?(@expected_path.sub(/\.css$/, ".todo"))
   end
 
   def name
@@ -47,7 +48,7 @@ class SassSpec::TestCase
   end
 
   def todo?
-    @input_path.to_s.include? "todo"
+    @todo 
   end
 
   def output
